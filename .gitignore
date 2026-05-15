@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.ipynb_checkpoints/
+*.egg-info/
+.DS_Store
+
+# Keep directory placeholders but ignore large research artifacts by default
+data/raw/**
+data/processed/**
+models/**
+results/**
+figures/**
+shap_outputs/**
+logs/**
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!models/.gitkeep
+!results/.gitkeep
+!figures/.gitkeep
+!shap_outputs/.gitkeep
+!logs/.gitkeep

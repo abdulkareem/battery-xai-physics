@@ -1,0 +1,33 @@
+name: battery-xai-physics
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - polars
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - plotly
+  - pyyaml
+  - tqdm
+  - joblib
+  - pyarrow
+  - h5py
+  - openpyxl
+  - pytorch
+  - tensorboard
+  - statsmodels
+  - networkx
+  - pip
+  - pip:
+      - xgboost>=2.0
+      - lightgbm>=4.3
+      - shap>=0.45
+      - optuna>=3.6
+      - pytest>=8.0
+      - ruff>=0.4
