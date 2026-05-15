@@ -1,0 +1,115 @@
+project:
+  name: physics_guided_battery_xai
+  seed: 2026
+  output_dir: results
+  figure_dir: figures
+  model_dir: models
+  shap_dir: shap_outputs
+  log_dir: logs
+  device: auto
+  mixed_precision: true
+  deterministic: true
+  colab:
+    mount_drive: true
+    drive_root: /content/drive/MyDrive/battery_xai_physics
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  datasets:
+    nasa:
+      enabled: true
+      path: data/raw/nasa
+      nominal_capacity_ah: null
+    calce:
+      enabled: true
+      path: data/raw/calce
+      nominal_capacity_ah: null
+    oxford:
+      enabled: true
+      path: data/raw/oxford
+      nominal_capacity_ah: null
+    iontech:
+      enabled: true
+      path: data/raw/iontech
+      nominal_capacity_ah: null
+  schema_version: 1
+  eol_soh: 0.80
+  min_cycles_per_cell: 10
+
+preprocessing:
+  interpolation: linear
+  rolling_window: 5
+  outlier_zscore: 5.0
+  normalize_by_train_dataset: true
+  feature_scaler: standard
+
+features:
+  voltage_grid_points: 256
+  dq_dv_savgol_window: 21
+  dq_dv_savgol_polyorder: 3
+  early_warning_window: 20
+  trajectory_cluster_count: 4
+
+models:
+  target: soh
+  sequence_length: 32
+  batch_size: 128
+  epochs: 100
+  learning_rate: 0.001
+  patience: 15
+  num_workers: 2
+  checkpoint_every: 5
+  tree:
+    random_forest:
+      n_estimators: 500
+      max_depth: null
+      min_samples_leaf: 2
+    xgboost:
+      n_estimators: 1000
+      max_depth: 5
+      learning_rate: 0.03
+      subsample: 0.85
+      colsample_bytree: 0.85
+      objective: reg:squarederror
+    lightgbm:
+      n_estimators: 1000
+      learning_rate: 0.03
+      num_leaves: 31
+      subsample: 0.85
+      colsample_bytree: 0.85
+  torch:
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.15
+    transformer_heads: 4
+    transformer_layers: 3
+    physics_loss_weight: 0.10
+    temporal_consistency_weight: 0.05
+
+transfer:
+  protocols:
+    - train: [nasa]
+      test: [calce]
+      name: nasa_to_calce
+    - train: [calce]
+      test: [oxford]
+      name: calce_to_oxford
+    - train: [nasa, calce, oxford]
+      test: [iontech]
+      name: mixed_to_iontech
+
+explainability:
+  background_samples: 256
+  explanation_samples: 2048
+  temporal_bins: 8
+  consistency_top_k: 20
+
+uncertainty:
+  mc_dropout_samples: 50
+  interval_alpha: 0.10
+
+visualization:
+  dpi: 600
+  style: seaborn-v0_8-whitegrid
+  formats: [png, pdf]
