@@ -1,5 +1,8 @@
+# Lightweight Colab entry configuration. It inherits the same schema as default.yaml
+# but enables deterministic demo data when no public archives are mounted so the
+# one-cell notebook always produces artifacts and verifies the pipeline.
 project:
-  name: physics_guided_battery_xai
+  name: colab_single_cell_battery_xai
   seed: 2026
   output_dir: results
   figure_dir: figures
@@ -16,6 +19,10 @@ project:
 data:
   raw_dir: data/raw
   processed_dir: data/processed
+  demo_if_missing: true
+  demo_cells_per_dataset: 3
+  demo_cycles: 90
+  demo_points_per_cycle: 16
   datasets:
     nasa:
       enabled: true
@@ -36,10 +43,6 @@ data:
   schema_version: 1
   eol_soh: 0.80
   min_cycles_per_cell: 10
-  demo_if_missing: false
-  demo_cells_per_dataset: 3
-  demo_cycles: 90
-  demo_points_per_cycle: 16
 
 preprocessing:
   interpolation: linear
@@ -59,35 +62,35 @@ models:
   target: soh
   sequence_length: 32
   batch_size: 128
-  epochs: 100
+  epochs: 30
   learning_rate: 0.001
-  patience: 15
+  patience: 8
   num_workers: 2
   checkpoint_every: 5
   tree:
     random_forest:
-      n_estimators: 500
+      n_estimators: 200
       max_depth: null
       min_samples_leaf: 2
     xgboost:
-      n_estimators: 1000
-      max_depth: 5
-      learning_rate: 0.03
-      subsample: 0.85
-      colsample_bytree: 0.85
+      n_estimators: 300
+      max_depth: 4
+      learning_rate: 0.04
+      subsample: 0.9
+      colsample_bytree: 0.9
       objective: reg:squarederror
     lightgbm:
-      n_estimators: 1000
-      learning_rate: 0.03
+      n_estimators: 300
+      learning_rate: 0.04
       num_leaves: 31
-      subsample: 0.85
-      colsample_bytree: 0.85
+      subsample: 0.9
+      colsample_bytree: 0.9
   torch:
-    hidden_size: 128
+    hidden_size: 96
     num_layers: 2
     dropout: 0.15
     transformer_heads: 4
-    transformer_layers: 3
+    transformer_layers: 2
     physics_loss_weight: 0.10
     temporal_consistency_weight: 0.05
 
@@ -104,13 +107,13 @@ transfer:
       name: mixed_to_iontech
 
 explainability:
-  background_samples: 256
-  explanation_samples: 2048
+  background_samples: 128
+  explanation_samples: 512
   temporal_bins: 8
   consistency_top_k: 20
 
 uncertainty:
-  mc_dropout_samples: 50
+  mc_dropout_samples: 20
   interval_alpha: 0.10
 
 visualization:

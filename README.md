@@ -36,6 +36,27 @@ This repository is a publication-level research pipeline for SOH and RUL predict
 - `src/battery_xai/paper/generate.py`: abstract, methodology, experimental setup, result analysis, and conclusion draft.
 - `src/battery_xai/paper/tables.py`: LaTeX benchmark/ablation tables and statistical significance tests.
 
+
+## Single-cell Google Colab run
+
+Use `notebooks/single_cell_colab_pipeline.ipynb` for the requested one-cell Colab workflow. The notebook contains exactly one executable cell that:
+
+1. Optionally mounts Google Drive.
+2. Clones this repository when `REPO_URL` is provided, or uses an already-uploaded `PROJECT_DIR`.
+3. Installs the package with the full scientific stack via `pip install -e .[full]`.
+4. Runs `configs/colab_single_cell.yaml`.
+5. Enables deterministic demo data when public datasets are not yet mounted, so the full pipeline still generates artifacts for a smoke test.
+6. Displays the transfer table and a publication-style capacity-fade figure directly in Colab.
+
+Minimal Colab usage:
+
+```python
+REPO_URL = "https://github.com/<your-user>/battery-xai-physics.git"
+# Run the single cell in notebooks/single_cell_colab_pipeline.ipynb
+```
+
+For real experiments, upload or mount public archives under `data/raw/nasa`, `data/raw/calce`, `data/raw/oxford`, and `data/raw/iontech`, then set `USE_DEMO_DATA_IF_MISSING = False` at the top of the same cell.
+
 ## Quick start
 
 ```bash

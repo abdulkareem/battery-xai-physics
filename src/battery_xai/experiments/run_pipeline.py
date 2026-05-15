@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from battery_xai.config import load_config, resolve_paths
+from battery_xai.data.demo import generate_demo_raw_data
 from battery_xai.data.loaders import load_datasets
 from battery_xai.data.preprocessing import BatteryPreprocessor, infer_cycle_table
 from battery_xai.evaluation.transfer import run_transfer_protocols
@@ -30,16 +31,23 @@ def run(config_path: str = "configs/default.yaml", experiment_name: str | None =
     logger = configure_logging(paths.logs)
     logger.info("Loading datasets")
     raw = load_datasets(cfg["data"]["datasets"], cfg["data"].get("eol_soh", 0.80))
+    if raw.empty and cfg["data"].get("demo_if_missing", False):
+        logger.warning("No raw datasets found; generating deterministic demo data for a Colab smoke run.")
+        raw = generate_demo_raw_data(
+            cells_per_dataset=cfg["data"].get("demo_cells_per_dataset", 3),
+            cycles=cfg["data"].get("demo_cycles", 90),
+            points_per_cycle=cfg["data"].get("demo_points_per_cycle", 16),
+            seed=cfg["project"]["seed"],
+        )
     raw.to_parquet(paths.results / "canonical_raw.parquet")
+    if raw.empty:
+        logger.warning("No data found. Add public datasets under data/raw/* or set data.demo_if_missing=true.")
+        write_paper_draft(paths.results / "paper_draft.md")
+        return {"results": paths.results}
     cycle = infer_cycle_table(raw, cfg["data"].get("eol_soh", 0.80))
     cycle = BatteryPreprocessor(cfg["preprocessing"]["rolling_window"], cfg["preprocessing"]["outlier_zscore"]).clean(cycle)
     featured = PhysicsFeatureExtractor(cfg["features"]["early_warning_window"], cfg["features"]["trajectory_cluster_count"]).transform(cycle)
     featured.to_parquet(paths.results / "physics_features.parquet")
-    if featured.empty:
-        logger.warning("No data found. Add public datasets under data/raw/* and rerun.")
-        write_paper_draft(paths.results / "paper_draft.md")
-        return {"results": paths.results}
-
     target = cfg["models"]["target"]
     feature_columns = [c for c in featured.select_dtypes("number").columns if c not in {"soh", "rul_cycles"}]
     train_idx, test_idx = split_by_cell(featured.dropna(subset=[target]), seed=cfg["project"]["seed"])
@@ -50,7 +58,8 @@ def run(config_path: str = "configs/default.yaml", experiment_name: str | None =
         model = train_tree_model(train_df, feature_columns, target, "xgboost", model_cfg)
     except ImportError:
         logger.warning("XGBoost unavailable; falling back to Random Forest")
-        model = train_tree_model(train_df, feature_columns, target, "random_forest", cfg["models"]["tree"]["random_forest"])
+        model_cfg = cfg["models"]["tree"]["random_forest"]
+        model = train_tree_model(train_df, feature_columns, target, "random_forest", model_cfg)
     model.save(paths.models / f"{target}_{model.name}.joblib")
     shap_values, importance = tree_shap(model, test_df[feature_columns], paths.shap, cfg["explainability"]["explanation_samples"])
     temporal = temporal_shap_evolution(shap_values, test_df.reset_index(drop=True), feature_columns, cfg["explainability"]["temporal_bins"])

@@ -14,10 +14,11 @@ def tree_shap(model, X: pd.DataFrame, output_dir: str | Path, max_samples: int =
 
     output_dir = Path(output_dir); output_dir.mkdir(parents=True, exist_ok=True)
     sample = X.sample(min(max_samples, len(X)), random_state=2026) if len(X) > max_samples else X
+    prepared = model._prepare_features(sample, fit=False) if hasattr(model, "_prepare_features") else sample
     explainer = shap.TreeExplainer(getattr(model, "model", model))
-    values = explainer.shap_values(sample)
+    values = explainer.shap_values(prepared)
     np.save(output_dir / "tree_shap_values.npy", values)
-    sample.to_parquet(output_dir / "tree_shap_features.parquet")
+    pd.DataFrame(prepared, columns=sample.columns).to_parquet(output_dir / "tree_shap_features.parquet")
     importance = pd.DataFrame({"feature": sample.columns, "mean_abs_shap": np.abs(values).mean(axis=0)}).sort_values("mean_abs_shap", ascending=False)
     importance.to_csv(output_dir / "global_shap_importance.csv", index=False)
     return values, importance
