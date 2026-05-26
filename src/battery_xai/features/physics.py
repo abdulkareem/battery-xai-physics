@@ -34,7 +34,7 @@ def extract_dq_dv_features(voltage: np.ndarray, capacity: np.ndarray, window: in
     return {
         "ica_peak_value": float(dq_dv[peak_idx]),
         "ica_peak_voltage_v": float(voltage[peak_idx]),
-        "ica_area": float(np.trapz(np.abs(dq_dv), voltage)),
+        "ica_area": float(np.trapezoid(np.abs(dq_dv), voltage)),
         "ica_peak_count": float(len(peaks)),
     }
 
